@@ -40,12 +40,36 @@ def new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent
     return df
 
 
+def insert_row(idx, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions,
+               text_Text,
+               text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight, text_Assessment_team_info,
+               text_Response_team_info):
+    new_row = pd.DataFrame({'Questionnaire': [text_Questionnaire],
+                            'Description': [text_Description],
+                            'Criteria': [text_Criteria],
+                            'Parent Criterion': [text_Parent_Criterion],
+                            'Questions': [text_Questions],
+                            'Text': [text_Text],
+                            'Legends': [text_Legends],
+                            'Possible Answers': [text_Possible_Answers],
+                            'P.A Legend': [text_PA_Legend],
+                            'Type': [text_Type],
+                            'Weight': [text_Weight],
+                            'Assessment team info': [text_Assessment_team_info],
+                            'Response team info': [text_Response_team_info]})
+
+    dfA = df.iloc[:idx, ]
+    dfB = df.iloc[idx:, ]
+
+    df = dfA.append(new_row).append(dfB).reset_index(drop=True)
+
+    return df
+
+
 def refactor_file(df, answer_type):
     # delete unnecessary columns
     df.drop('Unnamed: 7', axis=1, inplace=True)
     df.drop('n: notwendig', axis=1, inplace=True)
-    # delete unnecessary rows
-    df.drop(index=0, axis=0, inplace=True)
 
     # rename columns
     df = df.rename(columns={'Prüfpunkte Titel (n)': "Questions"})
@@ -70,14 +94,23 @@ def refactor_file(df, answer_type):
                              'Weight',
                              'Assessment team info',
                              'Response team info',
-                             'Norm-Ref. (o)'])
+                             'Norm-Ref. (o)'
+                             ])
 
     # set missing parameters
+    last_Parent_Criterion = ""
+    for i in range(1, len(df)):
+        #
+        if pd.isnull(df.at[i, 'Parent Criterion']) is False:
+            last_Parent_Criterion = df.at[i, 'Parent Criterion']
 
-    for i in range(1, len(df) + 1):
+        if pd.isnull(df.at[i, 'Criteria']) is False:
+            if pd.isnull(df.at[i, 'Parent Criterion']) is True:
+                df.loc[[i], 'Parent Criterion'] = last_Parent_Criterion
+
         # set Parent Criterion as Criteria if Criteria not exist
-        # if pd.isnull(df.at[i, 'Criteria']) is True:
-        #     df.loc[[i], 'Criteria'] = df.at[i, 'Parent Criterion']
+        if pd.isnull(df.at[i, 'Criteria']) is True:
+            df.loc[[i], 'Criteria'] = df.at[i, 'Parent Criterion']
         # set default Weight
         if pd.isnull(df.at[i, 'Questions']) is False:
             if pd.isnull(df.at[i, 'Weight']) is True:
@@ -87,35 +120,73 @@ def refactor_file(df, answer_type):
             if pd.isnull(df.at[i, 'Possible Answers']) is True:
                 df.loc[[i], 'Possible Answers'] = "ANSWER_TYPE_" + str(answer_type)
 
-    # #df.loc[[i], 'Possible Answers'] = "ANSWER_TYPE_" + str(answerType)
+            # Norm-Ref. (o) to info
+        if pd.isnull(df.at[i, 'Norm-Ref. (o)']) is False:
+            df.loc[[i], 'Assessment team info'] = "Norm-Ref.:" + df.at[i, 'Norm-Ref. (o)']
+            df.loc[[i], 'Response team info'] = "Norm-Ref.:" + df.at[i, 'Norm-Ref. (o)']
 
-    for i in reversed(range(1, len(df) + 1)):
-        if pd.isnull(df.at[i, 'Parent Criterion']) is False:
+    # delete Norm-Ref. (o) columns
+    df.drop('Norm-Ref. (o)', axis=1, inplace=True)
 
-            text_Questionnaire = ""
-            text_Description = ""
-            text_Criteria = df.at[i, 'Parent Criterion']
-            text_Parent_Criterion = ""
-            text_Questions = ""
-            text_Text = ""
-            text_Legends = ""
-            text_Possible_Answers = ""
-            text_PA_Legend = ""
-            text_Type = ""
-            text_Weight = ""
-            text_Assessment_team_info = ""
-            text_Response_team_info = ""
-            df = new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions,
-                             text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
-                             text_Assessment_team_info, text_Response_team_info, df)
-            new_row_order = []
-            # for j in range(1, i):
-            #     new_row_order.append(j)
-            #     print(j)
-            # new_row_order.append(0)
-            # for z in range(i + 1, len(df) + 1):
-            #     new_row_order.append(z)
-            # df = df.reindex(index=new_row_order)
+    return df
+
+
+def make_headline_criteria(df):
+    last_Parent_Criterion = ""
+
+    for i in range(1, len(df)):
+        if pd.isnull(df.at[i, "Criteria"]) is False:
+            if last_Parent_Criterion != df.at[i, 'Parent Criterion']:
+                last_Parent_Criterion = df.at[i, 'Parent Criterion']
+                print(last_Parent_Criterion)
+
+                text_Questionnaire = ""
+                text_Description = ""
+                text_Criteria = df.at[i, 'Parent Criterion']
+                text_Parent_Criterion = ""
+                text_Questions = ""
+                text_Text = ""
+                text_Legends = ""
+                text_Possible_Answers = ""
+                text_PA_Legend = ""
+                text_Type = ""
+                text_Weight = ""
+                text_Assessment_team_info = ""
+                text_Response_team_info = ""
+                df = insert_row(i, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion,
+                                text_Questions,
+                                text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
+                                text_Assessment_team_info, text_Response_team_info)
+    # delete unnecessary rows
+    df.drop(index=0, axis=0, inplace=True)
+    return df
+
+
+def shift_questions(df):
+    text_Questionnaire = ""
+    text_Description = ""
+    text_Criteria = ""
+    text_Parent_Criterion = ""
+    text_Questions = ""
+    text_Text = ""
+    text_Legends = ""
+    text_Possible_Answers = ""
+    text_PA_Legend = ""
+    text_Type = ""
+    text_Weight = ""
+    text_Assessment_team_info = ""
+    text_Response_team_info = ""
+
+    df = insert_row(len(df) + 1, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion,
+                    text_Questions,
+                    text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
+                    text_Assessment_team_info, text_Response_team_info)
+    df.Questions = df.Questions.shift(1)
+    df.Text = df.Text.shift(1)
+    df['Possible Answers'] = df['Possible Answers'].shift(1)
+    df['Weight'] = df['Weight'].shift(1)
+    df['Assessment team info'] = df['Assessment team info'].shift(1)
+    df['Response team info'] = df['Response team info'].shift(1)
 
     return df
 
@@ -135,9 +206,11 @@ def define_answer_rows(answer_type, df):
         text_Weight = ""
         text_Assessment_team_info = "nicht anwendbar"
         text_Response_team_info = ""
-        df = new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions,
-                         text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
-                         text_Assessment_team_info, text_Response_team_info, df)
+
+        df = insert_row(3, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion,
+                        text_Questions,
+                        text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
+                        text_Assessment_team_info, text_Response_team_info)
 
         text_Questionnaire = ""
         text_Description = ""
@@ -152,9 +225,10 @@ def define_answer_rows(answer_type, df):
         text_Weight = 100
         text_Assessment_team_info = "Es gibt wenig bis keinen Nachweis, dass ein Attribut eines Prozesses erfüllt wird. (0% - 15%)"
         text_Response_team_info = "Es gibt wenig bis keinen Nachweis, dass ein Attribut eines Prozesses erfüllt wird. (0% - 15%)"
-        df = new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions,
-                         text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
-                         text_Assessment_team_info, text_Response_team_info, df)
+        df = insert_row(3, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion,
+                        text_Questions,
+                        text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
+                        text_Assessment_team_info, text_Response_team_info)
 
         text_Questionnaire = ""
         text_Description = ""
@@ -169,9 +243,10 @@ def define_answer_rows(answer_type, df):
         text_Weight = 67
         text_Assessment_team_info = "Es gibt einen Nachweis, dass ein Attribut eines Prozesses teilweise erfüllt wird. (15% - 50%)"
         text_Response_team_info = "Es gibt einen Nachweis, dass ein Attribut eines Prozesses teilweise erfüllt wird. (15% - 50%)"
-        df = new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions,
-                         text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
-                         text_Assessment_team_info, text_Response_team_info, df)
+        df = insert_row(3, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion,
+                        text_Questions,
+                        text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
+                        text_Assessment_team_info, text_Response_team_info)
 
         text_Questionnaire = ""
         text_Description = ""
@@ -186,9 +261,10 @@ def define_answer_rows(answer_type, df):
         text_Weight = 32
         text_Assessment_team_info = "Es gibt einen Nachweis eines systematischen Ansatzes und des signifikanten Erfüllens eines Attributs eines Prozesses. Es können Schwächen bzgl. des Attributs vorliegen. (50% - 85%"
         text_Response_team_info = "Es gibt einen Nachweis eines systematischen Ansatzes und des signifikanten Erfüllens eines Attributs eines Prozesses. Es können Schwächen bzgl. des Attributs vorliegen. (50% - 85%"
-        df = new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions,
-                         text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
-                         text_Assessment_team_info, text_Response_team_info, df)
+        df = insert_row(3, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion,
+                        text_Questions,
+                        text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
+                        text_Assessment_team_info, text_Response_team_info)
 
         text_Questionnaire = ""
         text_Description = ""
@@ -203,15 +279,10 @@ def define_answer_rows(answer_type, df):
         text_Weight = 0
         text_Assessment_team_info = "Es gibt einen Nachweis eines vollständigen, systematischen Ansatzes und vollständig erfüllten Attributs eines Prozesses. Keine nennenswerten Schwächen bzgl. des Attributs liegen vor. (85% - 100%)"
         text_Response_team_info = "Es gibt einen Nachweis eines vollständigen, systematischen Ansatzes und vollständig erfüllten Attributs eines Prozesses. Keine nennenswerten Schwächen bzgl. des Attributs liegen vor. (85% - 100%)"
-        new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions,
-                    text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
-                    text_Assessment_team_info, text_Response_team_info, df)
-
-    # order rows
-    new_row_order = [4, 0, 1, 2, 3, 5]
-    for i in range(5, len(df) + 1):
-        new_row_order.append(i)
-    df = df.reindex(index=new_row_order)
+        df = insert_row(3, df, text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion,
+                        text_Questions,
+                        text_Text, text_Legends, text_Possible_Answers, text_PA_Legend, text_Type, text_Weight,
+                        text_Assessment_team_info, text_Response_team_info)
 
     return df
 
@@ -303,9 +374,13 @@ def convert_to_t4_excel(xlsx_title, answer_type, inputFilename):
 
     df = refactor_file(df, answer_type)
 
-    # df = define_answer_rows(answer_type, df)
+    df = make_headline_criteria(df)
 
-    # df = define_damage_and_name_rows(df)
+    df = shift_questions(df)
+
+    df = define_answer_rows(answer_type, df)
+
+    df = define_damage_and_name_rows(df)
 
     generate_file(df, xlsx_file_fame)
 
