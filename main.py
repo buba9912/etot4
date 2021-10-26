@@ -1,22 +1,20 @@
 import os
 import time
-
-import numpy as np
 import pandas as pd
 from openpyxl import Workbook, load_workbook
 
 
 def new_xlsx(xlsx_title):
     date = time.strftime('%Y-%m-%d_%H-%M', time.localtime())
-    xlsx_file_fame = "t4_readable_file\\" + xlsx_title + date + ".xlsx"
+    xlsx_file_path = "t4_readable_file\\" + xlsx_title + date + ".xlsx"
     # Create a xlsx Workbook
     wb = Workbook()
     ws = wb.active
     ws.title = xlsx_title
-    wb.save(xlsx_file_fame)
+    wb.save(xlsx_file_path)
     # open the xlsx
-    load_workbook(xlsx_file_fame)
-    return xlsx_file_fame
+    load_workbook(xlsx_file_path)
+    return xlsx_file_path
 
 
 def new_row_top(text_Questionnaire, text_Description, text_Criteria, text_Parent_Criterion, text_Questions, text_Text,
@@ -366,11 +364,15 @@ def generate_file(df, xlsx_file_fame):
     df.to_excel(xlsx_file_fame, index=False, header=True)
 
 
-def convert_to_t4_excel(xlsx_title, answer_type, inputFilename):
-    # open file
-    df: object = pd.read_excel(inputFilename)
+def open_file_and_folder(xlsx_file_path):
+    os.system(xlsx_file_path)
 
-    xlsx_file_fame = new_xlsx(xlsx_title)
+
+def convert_to_t4_excel(xlsx_title, answer_type, input_filename):
+    # open file
+    df: object = pd.read_excel(input_filename)
+
+    xlsx_file_path = new_xlsx(xlsx_title)
 
     df = refactor_file(df, answer_type)
 
@@ -382,15 +384,17 @@ def convert_to_t4_excel(xlsx_title, answer_type, inputFilename):
 
     df = define_damage_and_name_rows(df)
 
-    generate_file(df, xlsx_file_fame)
+    generate_file(df, xlsx_file_path)
+
+    open_file_and_folder(xlsx_file_path)
 
 
 def main():
     xlsx_title = "main"
     answer_type = 1
-    inputFilename = "C:\\Users\\Mika F\\Documents\\etoe\\Template_Fragebogen_K4_Design.xlsx"
+    input_filename = "C:\\Users\\Mika F\\Documents\\etoe\\Template_Fragebogen_K4_Design.xlsx"
 
-    convert_to_t4_excel(xlsx_title, answer_type, inputFilename)
+    convert_to_t4_excel(xlsx_title, answer_type, input_filename)
 
 
 if __name__ == '__main__':
