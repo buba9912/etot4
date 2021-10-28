@@ -15,9 +15,10 @@ def select_file():
 
 
 root = tk.Tk()
-root.title('customer to t4 readable')
+root.title('Excel to T4 readable File')
 root.resizable(False, False)
 root.geometry('600x350')
+root.iconbitmap('icon.ico')
 
 
 # open button

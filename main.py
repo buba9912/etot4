@@ -1,5 +1,10 @@
 import os
+import subprocess
+import sys
 import time
+import webbrowser
+from pathlib import Path
+
 import pandas as pd
 from openpyxl import Workbook, load_workbook
 
@@ -136,7 +141,7 @@ def make_headline_criteria(df):
         if pd.isnull(df.at[i, "Criteria"]) is False:
             if last_Parent_Criterion != df.at[i, 'Parent Criterion']:
                 last_Parent_Criterion = df.at[i, 'Parent Criterion']
-                print(last_Parent_Criterion)
+                # print(last_Parent_Criterion)
 
                 text_Questionnaire = ""
                 text_Description = ""
@@ -157,6 +162,20 @@ def make_headline_criteria(df):
                                 text_Assessment_team_info, text_Response_team_info)
     # delete unnecessary rows
     df.drop(index=0, axis=0, inplace=True)
+    return df
+
+
+def delit(df):
+    pass
+    last_last_Parent_Criterion = ""
+    last_Parent_Criterion = ""
+    for i in range(1, len(df)):
+        if pd.isnull(df.at[i, "Parent Criterion"]) is False:
+            if last_Parent_Criterion != df.at[i, 'Parent Criterion']:
+                last_last_Parent_Criterion = last_Parent_Criterion
+                last_Parent_Criterion = df.at[i, 'Parent Criterion']
+                if last_last_Parent_Criterion != df.at[i, 'Parent Criterion']:
+                    df.at[i, 'Parent Criterion'] = ""
     return df
 
 
@@ -358,14 +377,45 @@ def define_damage_and_name_rows(df):
 
 
 def generate_file(df, xlsx_file_fame):
-    print(df)
+    # print(df)
     cols = list(df.columns.values)
-    print(cols)
+    # print(cols)
     df.to_excel(xlsx_file_fame, index=False, header=True)
 
 
 def open_file_and_folder(xlsx_file_path):
+    # open file
     os.system(xlsx_file_path)
+
+    # open explorer
+    p = Path(xlsx_file_path).resolve()
+    for i in range(0, len(str(p))):
+        if str(p)[-1] != "\\":
+            p = str(p)[: -1]
+        else:
+            p = str(p)[: -1]
+            break
+    print(p)
+
+    path = os.path.normpath(p)
+
+    if sys.platform == "linux" or sys.platform == "linux2":
+        print(p)
+    elif sys.platform == "darwin":
+        print(p)
+        pass
+    # OS X
+    elif sys.platform == "win32":
+        FILEBROWSER_PATH = os.path.join(os.getenv('WINDIR'), 'explorer.exe')
+        if os.path.isdir(path):
+            subprocess.run([FILEBROWSER_PATH, path])
+        elif os.path.isfile(path):
+            subprocess.run([FILEBROWSER_PATH, '/select,', os.path.normpath(path)])
+
+
+# Windows...
+
+# subprocess.Popen(r'p')
 
 
 def convert_to_t4_excel(xlsx_title, answer_type, input_filename):
@@ -377,6 +427,8 @@ def convert_to_t4_excel(xlsx_title, answer_type, input_filename):
     df = refactor_file(df, answer_type)
 
     df = make_headline_criteria(df)
+
+    # df = delit(df)
 
     df = shift_questions(df)
 
@@ -392,7 +444,7 @@ def convert_to_t4_excel(xlsx_title, answer_type, input_filename):
 def main():
     xlsx_title = "main"
     answer_type = 1
-    input_filename = "C:\\Users\\Mika F\\Documents\\etoe\\Template_Fragebogen_K4_Design.xlsx"
+    input_filename = "C:\\Users\\Mika F\\Documents\\etot4\\Template_Fragebogen_K4_Design.xlsx"
 
     convert_to_t4_excel(xlsx_title, answer_type, input_filename)
 
