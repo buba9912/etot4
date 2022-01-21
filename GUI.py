@@ -10,15 +10,16 @@ def select_file():
     filetypes = (('excel files', '*.xlsx'),)
     input_filename = fd.askopenfilename(title='Open a file', initialdir='/', filetypes=filetypes)
     answer_type = 1
-    xlsx_title = "Uploaded_file_t4_"
+    xlsx_title = "Upload_file_t4_"
     convert_to_t4_excel(xlsx_title, answer_type, input_filename)
 
 
 root = tk.Tk()
 root.title('Excel to T4 readable File')
 root.resizable(False, False)
-root.geometry('600x350')
+root.geometry('480x440')
 root.iconbitmap('icon.ico')
+root.configure(background='#96bf0d')
 
 
 # open button

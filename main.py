@@ -70,8 +70,9 @@ def insert_row(idx, df, text_Questionnaire, text_Description, text_Criteria, tex
 
 def refactor_file(df, answer_type):
     # delete unnecessary columns
-    df.drop('Unnamed: 7', axis=1, inplace=True)
-    df.drop('n: notwendig', axis=1, inplace=True)
+    if len(df.columns) < 7:
+        df.drop('Unnamed: 7', axis=1, inplace=True)
+        df.drop('n: notwendig', axis=1, inplace=True)
 
     # rename columns
     df = df.rename(columns={'Prüfpunkte Titel (n)': "Questions"})
@@ -124,8 +125,8 @@ def refactor_file(df, answer_type):
 
             # Norm-Ref. (o) to info
         if pd.isnull(df.at[i, 'Norm-Ref. (o)']) is False:
-            df.loc[[i], 'Assessment team info'] = "Norm-Ref.:" + df.at[i, 'Norm-Ref. (o)']
-            df.loc[[i], 'Response team info'] = "Norm-Ref.:" + df.at[i, 'Norm-Ref. (o)']
+            df.loc[[i], 'Assessment team info'] = df.loc[[i], 'Assessment team info'] + df.at[i, 'Norm-Ref. (o)']
+            df.loc[[i], 'Response team info'] = df.loc[[i], 'Response team info'] + df.at[i, 'Norm-Ref. (o)']
 
     # delete Norm-Ref. (o) columns
     df.drop('Norm-Ref. (o)', axis=1, inplace=True)
@@ -161,20 +162,6 @@ def make_headline_criteria(df):
                                 text_Assessment_team_info, text_Response_team_info)
     # delete unnecessary rows
     df.drop(index=0, axis=0, inplace=True)
-    return df
-
-
-def delit(df):
-    pass
-    last_last_Parent_Criterion = ""
-    last_Parent_Criterion = ""
-    for i in range(1, len(df)):
-        if pd.isnull(df.at[i, "Parent Criterion"]) is False:
-            if last_Parent_Criterion != df.at[i, 'Parent Criterion']:
-                last_last_Parent_Criterion = last_Parent_Criterion
-                last_Parent_Criterion = df.at[i, 'Parent Criterion']
-                if last_last_Parent_Criterion != df.at[i, 'Parent Criterion']:
-                    df.at[i, 'Parent Criterion'] = ""
     return df
 
 
@@ -400,21 +387,15 @@ def open_file_and_folder(xlsx_file_path):
 
     if sys.platform == "linux" or sys.platform == "linux2":
         print(p)
-    elif sys.platform == "darwin":
-        print(p)
-        pass
-    # OS X
-    elif sys.platform == "win32":
+    elif sys.platform == "darwin":  # OS X
+        subprocess.Popen(["open", path])
+
+    elif sys.platform == "win32":  # Windows
         FILEBROWSER_PATH = os.path.join(os.getenv('WINDIR'), 'explorer.exe')
         if os.path.isdir(path):
             subprocess.run([FILEBROWSER_PATH, path])
         elif os.path.isfile(path):
             subprocess.run([FILEBROWSER_PATH, '/select,', os.path.normpath(path)])
-
-
-# Windows...
-
-# subprocess.Popen(r'p')
 
 
 def convert_to_t4_excel(xlsx_title, answer_type, input_filename):
@@ -426,8 +407,6 @@ def convert_to_t4_excel(xlsx_title, answer_type, input_filename):
     df = refactor_file(df, answer_type)
 
     df = make_headline_criteria(df)
-
-    # df = delit(df)
 
     df = shift_questions(df)
 
@@ -443,7 +422,7 @@ def convert_to_t4_excel(xlsx_title, answer_type, input_filename):
 def main():
     xlsx_title = "main"
     answer_type = 1
-    input_filename = "C:\\Users\\Mika F\\Documents\\etot4\\Template_Fragebogen_K4_Design.xlsx"
+    input_filename = "C:\\Users\\Mika F\OneDrive - K4 DIGITAL GmbH\\etot4\\Template_Fragebogen_K4_Design.xlsx"
 
     convert_to_t4_excel(xlsx_title, answer_type, input_filename)
 
